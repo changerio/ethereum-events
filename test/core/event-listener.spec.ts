@@ -2,9 +2,8 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const EventEmitter = require('events');
-const BlockStatus = require('../../lib/util/block-status');
-const BlockPolling = require('../../lib/core/block-polling');
-const EventListener = require('../../lib/core/event-listener');
+import { BlockStatus } from '../../src/lib/util';
+import { BlockPolling, EventListener } from '../../src/lib/core';
 
 chai.should();
 
@@ -13,7 +12,7 @@ describe('Event Listener', function () {
     const emitter = new EventEmitter();
 
     this.polling = sinon.createStubInstance(BlockPolling, {
-      on: sinon.stub().callsFake(emitter.on)
+      on: sinon.stub().callsFake(emitter.on),
     });
 
     this.polling.emit = sinon.stub().callsFake(emitter.emit);
@@ -77,7 +76,7 @@ describe('Event Listener', function () {
       const status = BlockStatus.CONFIRMED;
       const blocks = [
         { number: 2, status: status, events: [{ name: 'Event' }] },
-        { number: 3, status: status, events: [{ name: 'AnotherEvent' }] }
+        { number: 3, status: status, events: [{ name: 'AnotherEvent' }] },
       ];
 
       const blockCb = sinon.stub();
@@ -96,7 +95,7 @@ describe('Event Listener', function () {
       const status = BlockStatus.CONFIRMED;
       const blocks = [
         { number: 2, status: status, events: [{ name: 'Event' }] },
-        { number: 3, status: status, events: [{ name: 'AnotherEvent' }] }
+        { number: 3, status: status, events: [{ name: 'AnotherEvent' }] },
       ];
 
       const blockCb = sinon.stub().onFirstCall().callsArgWith(2, 'Error');
@@ -116,7 +115,7 @@ describe('Event Listener', function () {
       const status = BlockStatus.CONFIRMED;
       const blocks = [
         { number: 2, status: status, events: [{ name: 'Event' }] },
-        { number: 3, status: status, events: [{ name: 'AnotherEvent' }] }
+        { number: 3, status: status, events: [{ name: 'AnotherEvent' }] },
       ];
 
       const blockCb = sinon.stub().callsArg(2);
@@ -131,22 +130,39 @@ describe('Event Listener', function () {
     });
 
     it('should emit a new block with different status even if done callback is not called', function () {
-      const confirmedBlock = { number: 2, status: BlockStatus.CONFIRMED, events: [{ name: 'Event' }] };
-      const unconfirmedBlock = { number: 3, status: BlockStatus.UNCONFIRMED, events: [{ name: 'AnotherEvent' }] };
+      const confirmedBlock = {
+        number: 2,
+        status: BlockStatus.CONFIRMED,
+        events: [{ name: 'Event' }],
+      };
+      const unconfirmedBlock = {
+        number: 3,
+        status: BlockStatus.UNCONFIRMED,
+        events: [{ name: 'AnotherEvent' }],
+      };
 
       const confirmedBlockCb = sinon.stub();
       const unconfirmedBlockCb = sinon.stub();
 
       this.eventListener.on('block.' + BlockStatus.CONFIRMED, confirmedBlockCb);
-      this.eventListener.on('block.' + BlockStatus.UNCONFIRMED, unconfirmedBlockCb);
+      this.eventListener.on(
+        'block.' + BlockStatus.UNCONFIRMED,
+        unconfirmedBlockCb
+      );
 
       this.polling.emit('block', confirmedBlock);
       this.polling.emit('block', unconfirmedBlock);
 
       confirmedBlockCb.callCount.should.be.equal(1);
-      confirmedBlockCb.calledWith(confirmedBlock.number, confirmedBlock.events).should.be.true;
+      confirmedBlockCb.calledWith(
+        confirmedBlock.number,
+        confirmedBlock.events
+      ).should.be.true;
       unconfirmedBlockCb.callCount.should.be.equal(1);
-      unconfirmedBlockCb.calledWith(unconfirmedBlock.number, unconfirmedBlock.events).should.be.true;
+      unconfirmedBlockCb.calledWith(
+        unconfirmedBlock.number,
+        unconfirmedBlock.events
+      ).should.be.true;
     });
 
     it('should emit an error', function () {
