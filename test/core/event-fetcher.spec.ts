@@ -1,4 +1,6 @@
 'use strict';
+import { EventFetcher } from '../../src/lib/core';
+import { BlockNotFoundError } from '../../lib/errors';
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const sinon = require('sinon');
@@ -6,8 +8,6 @@ const event = require('../fixtures/event.json');
 const log = require('../fixtures/log.json');
 const abi = require('../fixtures/abi.json');
 const block = require('../fixtures/block.json');
-const EventFetcher = require('../../lib/core/event-fetcher');
-const { BlockNotFoundError } = require('../../lib/errors');
 
 chai.should();
 chai.use(chaiAsPromised);
@@ -22,8 +22,8 @@ describe('Event Fetcher', function () {
     this.web3 = {
       eth: {
         getBlock: sinon.stub().withArgs(blockHash).resolves(block),
-        getPastLogs: sinon.stub().resolves([log])
-      }
+        getPastLogs: sinon.stub().resolves([log]),
+      },
     };
 
     this.eventFetcher = new EventFetcher(this.web3, [contract]);
@@ -39,7 +39,11 @@ describe('Event Fetcher', function () {
     events.should.have.length(1);
     events[0].should.be.deep.equal(event);
 
-    const callArgs = { address: [contract.address], fromBlock: fromBlock, toBlock: toBlock };
+    const callArgs = {
+      address: [contract.address],
+      fromBlock: fromBlock,
+      toBlock: toBlock,
+    };
 
     this.web3.eth.getPastLogs.calledWith(callArgs).should.be.true;
   });
@@ -47,8 +51,9 @@ describe('Event Fetcher', function () {
   it('should throw an error if block is not available', function () {
     this.web3.eth.getBlock.resolves(null);
 
-    return this.eventFetcher.getEvents(fromBlock, toBlock).should.be.eventually.rejected
-      .and.be.an.instanceOf(BlockNotFoundError);
+    return this.eventFetcher
+      .getEvents(fromBlock, toBlock)
+      .should.be.eventually.rejected.and.be.an.instanceOf(BlockNotFoundError);
   });
 
   context('after getting events', function () {
@@ -56,7 +61,7 @@ describe('Event Fetcher', function () {
       await this.eventFetcher.getEvents(fromBlock, toBlock);
     });
 
-    it('should not request a block again if it\'s already in cache', async function () {
+    it("should not request a block again if it's already in cache", async function () {
       this.web3.eth.getBlock.reset();
 
       const events = await this.eventFetcher.getEvents(fromBlock, toBlock);
@@ -91,7 +96,7 @@ describe('Event Fetcher', function () {
       const eventFetcher = new EventFetcher(this.web3, [contractWithFilters]);
       const events = await eventFetcher.getEvents(fromBlock, toBlock);
 
-      events.should.have.length(0);
+      expect(events).toHaveLength(0);
     });
   });
 });
